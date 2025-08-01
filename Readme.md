@@ -42,58 +42,165 @@ Before testing the API, ensure the following are installed on your system:
 5. **Access the API**  
   Once the application is running, the API will be available at `http://localhost:8080`. You can use tools like [Postman](https://www.postman.com/) or `curl` to test the endpoints.
 
-## Example Endpoints
+## API Endpoints
 
-Here are some example API endpoints you can test:
-
+### Health Check
 - **Health Check**  
   Verify the application is running:
   ```bash
   GET http://localhost:8080/health
   ```
 
-- **Create a Journal Entry**  
-  Add a new journal entry:
-  ```bash
-  POST http://localhost:8080/journal-entries
-  Content-Type: application/json
+### User Management
 
-  {
-   "title": "My First Entry",
-   "content": "This is a test journal entry."
-  }
+- **Get All Users**  
+  Retrieve all users:
+  ```bash
+  GET http://localhost:8080/user
   ```
 
-- **Get All Journal Entries**  
-  Retrieve all journal entries:
+- **Get User by ID**  
+  Retrieve a specific user:
   ```bash
-  GET http://localhost:8080/journal-entries
+  GET http://localhost:8080/user/{id}
   ```
 
 - **Create a User**  
   Register a new user:
   ```bash
-  POST http://localhost:8080/users
+  POST http://localhost:8080/user
   Content-Type: application/json
 
   {
-   "username": "testuser",
-   "password": "securepassword"
+    "username": "testuser",
+    "password": "securepassword"
   }
+  ```
+
+- **Update User**  
+  Update an existing user:
+  ```bash
+  PUT http://localhost:8080/user/{username}
+  Content-Type: application/json
+
+  {
+    "username": "updateduser",
+    "password": "newpassword"
+  }
+  ```
+
+- **Delete User**  
+  Delete a user:
+  ```bash
+  DELETE http://localhost:8080/user/{id}
+  ```
+
+### Journal Entry Management
+
+- **Get Journal Entries by Username**  
+  Retrieve all journal entries for a specific user:
+  ```bash
+  GET http://localhost:8080/journal/{username}
+  ```
+
+- **Get Journal Entry by ID**  
+  Retrieve a specific journal entry:
+  ```bash
+  GET http://localhost:8080/journal/id/{id}
+  ```
+
+- **Create a Journal Entry**  
+  Add a new journal entry:
+  ```bash
+  POST http://localhost:8080/journal
+  Content-Type: application/json
+
+  {
+    "title": "My First Entry",
+    "content": "This is a test journal entry."
+  }
+  ```
+
+- **Update Journal Entry**  
+  Update an existing journal entry:
+  ```bash
+  PUT http://localhost:8080/journal/id/{id}
+  Content-Type: application/json
+
+  {
+    "title": "Updated Entry",
+    "content": "This is an updated journal entry."
+  }
+  ```
+
+- **Delete Journal Entry**  
+  Delete a journal entry:
+  ```bash
+  DELETE http://localhost:8080/journal/id/{id}
   ```
 
 ## Testing with Postman
 
-1. Import the API collection into Postman.
+1. Import the API collection into Postman or create requests manually.
 2. Set the base URL to `http://localhost:8080`.
-3. Use the provided endpoints to test the application.
+3. Test the endpoints in the following order:
+   - First, create a user using the POST `/user` endpoint
+   - Then, create journal entries using the POST `/journal` endpoint
+   - Retrieve journal entries using GET `/journal/{username}`
+
+### Sample Test Flow
+
+1. **Create a User:**
+   ```bash
+   POST http://localhost:8080/user
+   {
+     "username": "john_doe",
+     "password": "mypassword123"
+   }
+   ```
+
+2. **Create Journal Entries:**
+   ```bash
+   POST http://localhost:8080/journal
+   {
+     "title": "First Day",
+     "content": "Today was a great day to start journaling!"
+   }
+   ```
+
+3. **Get User's Journal Entries:**
+   ```bash
+   GET http://localhost:8080/journal/john_doe
+   ```
 
 ## Troubleshooting
 
-- Ensure MongoDB is running and accessible.
-- Check the logs for any errors during startup or API calls.
+- **MongoDB Connection**: Ensure MongoDB is running and accessible on the configured port.
+- **Port Conflicts**: If port 8080 is in use, configure a different port in `application.properties`:
+  ```properties
+  server.port=8081
+  ```
+- **Application Logs**: Check the console logs for any errors during startup or API calls.
+- **Data Validation**: Ensure required fields (username, password, title) are provided in requests.
+- **ObjectId Format**: When using journal entry or user IDs, ensure they are valid MongoDB ObjectId format (24-character hex string).
 
-By following these steps, you can easily test and run the JournalApp API. JournalApp
+## Notes
+
+- Journal entries are automatically timestamped when created.
+- The application uses MongoDB ObjectIds for entity identification.
+- User passwords are stored as plain text (consider implementing encryption for production use).
+- Journal entries are associated with users through the User entity's journalEntries list.
+
+By following these steps, you can easily test and run the JournalApp API.
+
+## Features
+
+- **User Management**: Create, read, update, and delete users
+- **Journal Entry Management**: Create, read, update, and delete journal entries  
+- **User-Journal Association**: Journal entries are linked to specific users
+- **MongoDB Integration**: Persistent data storage using MongoDB
+- **RESTful API**: Clean and intuitive REST endpoints
+- **Health Monitoring**: Built-in health check endpoint
 
 ## Overview
 

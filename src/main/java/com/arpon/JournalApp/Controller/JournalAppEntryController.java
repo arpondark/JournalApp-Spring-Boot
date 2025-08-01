@@ -31,7 +31,7 @@ public class JournalAppEntryController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("{username}")
+    @GetMapping("/{username}")
     public ResponseEntity<List<JournalEntry>> getAllEntriesByUsername(@PathVariable String username) {
         User user = userService.findByUsername(username);
         if (user != null) {
