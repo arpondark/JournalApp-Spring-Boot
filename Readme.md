@@ -103,16 +103,10 @@ Before testing the API, ensure the following are installed on your system:
   GET http://localhost:8080/journal/{username}
   ```
 
-- **Get Journal Entry by ID**  
-  Retrieve a specific journal entry:
+- **Create a Journal Entry for a User**  
+  Add a new journal entry for a specific user:
   ```bash
-  GET http://localhost:8080/journal/id/{id}
-  ```
-
-- **Create a Journal Entry**  
-  Add a new journal entry:
-  ```bash
-  POST http://localhost:8080/journal
+  POST http://localhost:8080/journal/{username}
   Content-Type: application/json
 
   {
@@ -121,10 +115,16 @@ Before testing the API, ensure the following are installed on your system:
   }
   ```
 
-- **Update Journal Entry**  
-  Update an existing journal entry:
+- **Get Journal Entry by Index**  
+  Retrieve a specific journal entry by its index for a user:
   ```bash
-  PUT http://localhost:8080/journal/id/{id}
+  GET http://localhost:8080/journal/{username}/{entryIndex}
+  ```
+
+- **Update Journal Entry by Index**  
+  Update a specific journal entry by its index for a user:
+  ```bash
+  PUT http://localhost:8080/journal/{username}/{entryIndex}
   Content-Type: application/json
 
   {
@@ -133,11 +133,13 @@ Before testing the API, ensure the following are installed on your system:
   }
   ```
 
-- **Delete Journal Entry**  
-  Delete a journal entry:
+- **Delete Journal Entry by Index**  
+  Delete a specific journal entry by its index for a user:
   ```bash
-  DELETE http://localhost:8080/journal/id/{id}
+  DELETE http://localhost:8080/journal/{username}/{entryIndex}
   ```
+
+
 
 ## Testing with Postman
 
@@ -145,7 +147,7 @@ Before testing the API, ensure the following are installed on your system:
 2. Set the base URL to `http://localhost:8080`.
 3. Test the endpoints in the following order:
    - First, create a user using the POST `/user` endpoint
-   - Then, create journal entries using the POST `/journal` endpoint
+   - Then, create journal entries using the POST `/journal/{username}` endpoint
    - Retrieve journal entries using GET `/journal/{username}`
 
 ### Sample Test Flow
@@ -153,15 +155,19 @@ Before testing the API, ensure the following are installed on your system:
 1. **Create a User:**
    ```bash
    POST http://localhost:8080/user
+   Content-Type: application/json
+   
    {
-     "username": "john_doe",
+     "username": "arpon",
      "password": "mypassword123"
    }
    ```
 
-2. **Create Journal Entries:**
+2. **Create Journal Entries for the User:**
    ```bash
-   POST http://localhost:8080/journal
+   POST http://localhost:8080/journal/arpon
+   Content-Type: application/json
+   
    {
      "title": "First Day",
      "content": "Today was a great day to start journaling!"
@@ -170,19 +176,77 @@ Before testing the API, ensure the following are installed on your system:
 
 3. **Get User's Journal Entries:**
    ```bash
-   GET http://localhost:8080/journal/john_doe
+   GET http://localhost:8080/journal/arpon
+   ```
+
+4. **Get a Specific Entry by Index (0-based):**
+   ```bash
+   GET http://localhost:8080/journal/arpon/0
+   ```
+
+5. **Update an Entry by Index:**
+   ```bash
+   PUT http://localhost:8080/journal/arpon/0
+   Content-Type: application/json
+   
+   {
+     "title": "Updated First Day",
+     "content": "Updated content for my first journal entry!"
+   }
+   ```
+
+6. **Delete an Entry by Index:**
+   ```bash
+   DELETE http://localhost:8080/journal/arpon/0
    ```
 
 ## Troubleshooting
 
+### Common Issues
+
+- **"Transaction numbers are only allowed on a replica set member or mongos"**: 
+  - This occurs when using `@Transactional` with a standalone MongoDB instance
+  - For local development, transactions are not supported in standalone MongoDB
+  - Solution: Remove `@Transactional` annotations (already fixed in the code)
+
+- **"An error occurred while saving the entry"**: 
+  - Ensure the user exists before creating journal entries
+  - Check that the journal entry has a title (required field)
+  - Verify MongoDB connection is working
+
+- **"User not found"**: 
+  - Make sure you've created the user first using POST `/user`
+  - Check the username spelling matches exactly
+
 - **MongoDB Connection**: Ensure MongoDB is running and accessible on the configured port.
+  - Start MongoDB: `mongod` (or use MongoDB Compass)
+  - Check connection string in `application.properties`
+
 - **Port Conflicts**: If port 8080 is in use, configure a different port in `application.properties`:
   ```properties
   server.port=8081
   ```
+  
 - **Application Logs**: Check the console logs for any errors during startup or API calls.
-- **Data Validation**: Ensure required fields (username, password, title) are provided in requests.
-- **ObjectId Format**: When using journal entry or user IDs, ensure they are valid MongoDB ObjectId format (24-character hex string).
+
+- **Data Validation**: 
+  - Ensure required fields are provided:
+    - User: `username`, `password`
+    - Journal Entry: `title` (content is optional)
+
+- **JSON Format**: Make sure your request body is valid JSON and includes Content-Type header:
+  ```bash
+  Content-Type: application/json
+  ```
+
+### MongoDB Configuration
+If you're having database connection issues, update your `application.properties`:
+```properties
+spring.data.mongodb.host=localhost
+spring.data.mongodb.port=27017
+spring.data.mongodb.database=journal_entries
+spring.data.mongodb.auto-index-creation=true
+```
 
 ## Notes
 
@@ -250,4 +314,4 @@ The project is configured to use Java 17.
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.

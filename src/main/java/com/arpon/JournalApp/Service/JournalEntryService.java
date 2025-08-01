@@ -1,9 +1,8 @@
 package com.arpon.JournalApp.Service;
 
-import java.util.List;
-import java.util.Optional;
 
-import org.bson.types.ObjectId;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,53 +21,68 @@ public class JournalEntryService {
     public List<JournalEntry> getAllEntries() {
         return journalEntryRepository.findAll();
     }
-
-    public Optional<JournalEntry> findById(String id) {
-        ObjectId objectId = new ObjectId(id);
-        return journalEntryRepository.findById(objectId);
-    }
-
-    public void saveEntry(JournalEntry journalEntry) {
-        journalEntryRepository.save(journalEntry);
-    }
-
-    public void updateEntry(String id, JournalEntry journalEntry) {
-        ObjectId objectId = new ObjectId(id);
-        Optional<JournalEntry> existingEntryOptional = journalEntryRepository.findById(objectId);
-
-        if (existingEntryOptional.isPresent()) {
-            JournalEntry existingEntry = existingEntryOptional.get();
-
-            // Update the fields that are provided in the request
-            // Title is marked as @NonNull, so it should always be present
-            existingEntry.setTitle(journalEntry.getTitle());
+    public void saveEntry(JournalEntry journalEntry, String userName) {
+        try {
+            // Validate input
+            if (journalEntry == null) {
+                throw new RuntimeException("Journal entry cannot be null");
+            }
+            if (journalEntry.getTitle() == null || journalEntry.getTitle().trim().isEmpty()) {
+                throw new RuntimeException("Journal entry title is required");
+            }
+            if (userName == null || userName.trim().isEmpty()) {
+                throw new RuntimeException("Username is required");
+            }
             
-            if (journalEntry.getContent() != null) {
-                existingEntry.setContent(journalEntry.getContent());
+            // Find user
+            User user = userService.findByUsername(userName);
+            if (user == null) {
+                throw new RuntimeException("User not found: " + userName);
             }
-            // Keep the original date if not provided in the request
-            if (journalEntry.getDate() != null) {
-                existingEntry.setDate(journalEntry.getDate());
+            
+            // Set date and save entry
+            journalEntry.setDate(new java.util.Date());
+            JournalEntry saved = journalEntryRepository.save(journalEntry);
+            
+            // Add to user's entries
+            if (user.getJournalEntries() == null) {
+                user.setJournalEntries(new java.util.ArrayList<>());
             }
-
-            journalEntryRepository.save(existingEntry);
-        } else {
-            // If the entry doesn't exist, set the ID and save as a new entry
-            journalEntry.setId(objectId);
-            journalEntryRepository.save(journalEntry);
+            user.getJournalEntries().add(saved);
+            userService.saveUser(user);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("An error occurred while saving the entry: " + e.getMessage(), e);
         }
     }
 
-    public void deleteEntryById(String id) {
-        ObjectId objectId = new ObjectId(id);
-        journalEntryRepository.deleteById(objectId);
-    }
-
-    public List<JournalEntry> getAllEntriesByUserId(ObjectId userId) {
-        Optional<User> userOptional = userService.findUserById(userId);
-        if (userOptional.isPresent()) {
-            return userOptional.get().getJournalEntries();
+    // Remove id-based methods and add username-based methods
+    public List<JournalEntry> getAllEntriesByUsername(String username) {
+        User user = userService.findByUsername(username);
+        if (user != null) {
+            return user.getJournalEntries();
         }
         return List.of();
+    }
+
+    public void deleteEntryByUsernameAndIndex(String username, int entryIndex) {
+        User user = userService.findByUsername(username);
+        if (user == null || user.getJournalEntries() == null || entryIndex < 0 || entryIndex >= user.getJournalEntries().size()) {
+            throw new RuntimeException("Entry not found");
+        }
+        user.getJournalEntries().remove(entryIndex);
+        userService.saveUser(user);
+    }
+
+    public void updateEntryByUsernameAndIndex(String username, int entryIndex, JournalEntry journalEntry) {
+        User user = userService.findByUsername(username);
+        if (user == null || user.getJournalEntries() == null || entryIndex < 0 || entryIndex >= user.getJournalEntries().size()) {
+            throw new RuntimeException("Entry not found");
+        }
+        JournalEntry existingEntry = user.getJournalEntries().get(entryIndex);
+        existingEntry.setTitle(journalEntry.getTitle());
+        existingEntry.setContent(journalEntry.getContent());
+        existingEntry.setDate(journalEntry.getDate() != null ? journalEntry.getDate() : existingEntry.getDate());
+        userService.saveUser(user);
     }
 }

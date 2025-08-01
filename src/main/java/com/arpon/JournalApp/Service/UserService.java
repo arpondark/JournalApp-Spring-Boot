@@ -34,4 +34,6 @@ public class UserService {
         Optional<User> userOptional = userRepository.findByUsername(username);
         return userOptional.orElse(null);
     }
+
+
 }
